@@ -1,0 +1,393 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========== 用户系统 ==========
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  username      String   @unique
+  passwordHash  String?
+  displayName   String?
+  avatarUrl     String?
+  bio           String?
+  website       String?
+  githubId      String?  @unique
+  googleId      String?  @unique
+  role          UserRole @default(USER)
+  points        Int      @default(0)
+  level         Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  posts          Post[]
+  comments       Comment[]
+  likes          Like[]
+  favorites      Favorite[]
+  readingHistory ReadingHistory[]
+  achievements   UserAchievement[]
+  gameScores     GameScore[]
+  playlists      Playlist[]
+  dailySignIns   DailySignIn[]
+  conversations  AIConversation[]
+  documents      Document[]
+  communityPosts      CommunityPost[]
+  communityComments   CommunityComment[]
+  communityLikes      CommunityLike[]
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// ========== 博客系统 ==========
+model Post {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String
+  excerpt     String?
+  coverImage  String?
+  readingTime Int      @default(0)
+  viewCount   Int      @default(0)
+  likeCount   Int      @default(0)
+  commentCount Int     @default(0)
+  published   Boolean  @default(false)
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  tags        PostTag[]
+  comments    Comment[]
+  likes       Like[]
+  favorites   Favorite[]
+  readingHistory ReadingHistory[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  color     String   @default("#6366f1")
+  createdAt DateTime @default(now())
+
+  posts     Post[]
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  posts     PostTag[]
+}
+
+model PostTag {
+  postId String
+  tagId  String
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([tagId])
+}
+
+// ========== 评论系统 ==========
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  depth     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([parentId])
+}
+
+// ========== 互动系统 ==========
+model Like {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model ReadingHistory {
+  id        String   @id @default(cuid())
+  readAt    DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}
+
+// ========== 音乐系统 ==========
+model Song {
+  id        String   @id @default(cuid())
+  title     String
+  artist    String
+  album     String?
+  duration  Int
+  coverUrl  String?
+  audioUrl  String
+  lyrics    String?
+  playCount Int      @default(0)
+  createdAt DateTime @default(now())
+
+  playlists PlaylistSong[]
+}
+
+model Playlist {
+  id        String   @id @default(cuid())
+  name      String
+  coverUrl  String?
+  isPublic  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  songs     PlaylistSong[]
+}
+
+model PlaylistSong {
+  playlistId String
+  songId     String
+  order      Int      @default(0)
+  addedAt    DateTime @default(now())
+
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  song       Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@id([playlistId, songId])
+}
+
+// ========== 游戏系统 ==========
+model GameScore {
+  id        String   @id @default(cuid())
+  game      GameType
+  score     Int
+  level     Int      @default(1)
+  lines     Int      @default(0)
+  duration  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([game, score])
+  @@index([userId])
+}
+
+enum GameType {
+  SNAKE
+  GAME_2048
+  TETRIS
+  SPACE_INVADERS
+}
+
+// ========== 成就系统 ==========
+model Achievement {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String
+  icon        String
+  category    AchievementCategory
+  points      Int      @default(10)
+  createdAt   DateTime @default(now())
+
+  users       UserAchievement[]
+}
+
+enum AchievementCategory {
+  READING
+  AI
+  MUSIC
+  GAME
+  SOCIAL
+  DAILY
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  earnedAt      DateTime @default(now())
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+}
+
+// ========== 每日系统 ==========
+model DailySignIn {
+  id        String   @id @default(cuid())
+  signInDate DateTime @default(now())
+  streak    Int      @default(1)
+  bonusPoints Int    @default(0)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, signInDate])
+  @@index([userId, signInDate])
+}
+
+// ========== AI 对话 ==========
+model AIConversation {
+  id        String   @id @default(cuid())
+  title     String   @default("新对话")
+  type      AIType   @default(CHAT)
+  model     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  messages  AIMessage[]
+}
+
+enum AIType {
+  CHAT
+  WRITING
+  CODE
+  TRANSLATE
+  SUMMARY
+  STUDY
+}
+
+model AIMessage {
+  id        String   @id @default(cuid())
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+
+  conversationId String
+  conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+// ========== 知识库 ==========
+model Document {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  fileType  String
+  fileUrl   String?
+  fileSize  Int      @default(0)
+  embedding String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  chunks    DocumentChunk[]
+}
+
+model DocumentChunk {
+  id        String   @id @default(cuid())
+  content   String
+  index     Int
+  embedding String?
+
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+}
+
+// ========== 社区系统 (预留) ==========
+model CommunityPost {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  type      CommunityPostType @default(POST)
+  viewCount Int      @default(0)
+  likeCount Int      @default(0)
+  commentCount Int   @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  comments  CommunityComment[]
+  likes     CommunityLike[]
+}
+
+enum CommunityPostType {
+  POST
+  QUESTION
+  SHARE
+}
+
+model CommunityComment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    CommunityComment? @relation("CommunityCommentReplies", fields: [parentId], references: [id])
+  replies   CommunityComment[] @relation("CommunityCommentReplies")
+}
+
+model CommunityLike {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+// ========== 网站统计 ==========
+model SiteStat {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
