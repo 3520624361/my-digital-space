@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 
-type AIProvider = "openai" | "deepseek" | "gemini" | "claude" | "openrouter";
+type AIProvider = "openai" | "deepseek" | "gemini" | "claude" | "openrouter" | "xiaomi";
 
 interface AIProviderConfig {
   name: AIProvider;
@@ -45,6 +45,12 @@ const providerConfigs: Record<AIProvider, AIProviderConfig> = {
       "google/gemini-2.0-flash",
     ],
   },
+  xiaomi: {
+    name: "xiaomi",
+    apiKey: process.env.XIAOMI_API_KEY || "",
+    baseUrl: "https://api.xiaomimimo.com/v1",
+    models: ["mimo-v2-flash", "mimo-v2-pro"],
+  },
 };
 
 export function getAIProvider(provider?: AIProvider) {
@@ -70,6 +76,36 @@ export function getDefaultModel(provider?: AIProvider): string {
 }
 
 export const AI_PROVIDERS = Object.keys(providerConfigs) as AIProvider[];
+
+/** 客户端安全的提供者列表（不含 API Key） */
+export const AI_PROVIDER_LIST = [
+  { value: "openai", label: "OpenAI", models: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "o1-mini"] },
+  { value: "deepseek", label: "DeepSeek", models: ["deepseek-chat", "deepseek-coder"] },
+  { value: "gemini", label: "Gemini", models: ["gemini-2.0-flash", "gemini-1.5-pro"] },
+  { value: "claude", label: "Claude", models: ["claude-sonnet-4-6", "claude-haiku-4-5"] },
+  { value: "openrouter", label: "OpenRouter", models: ["openai/gpt-4o", "anthropic/claude-sonnet-4-6", "deepseek/deepseek-chat", "google/gemini-2.0-flash"] },
+  { value: "xiaomi", label: "小米 MiMo", models: ["mimo-v2-flash", "mimo-v2-pro"] },
+] as const;
+
+/** 模型显示名称映射 */
+export const MODEL_DISPLAY_NAMES: Record<string, string> = {
+  "gpt-4o": "GPT-4o",
+  "gpt-4o-mini": "GPT-4o Mini",
+  "gpt-4-turbo": "GPT-4 Turbo",
+  "o1-mini": "o1 Mini",
+  "deepseek-chat": "DeepSeek Chat",
+  "deepseek-coder": "DeepSeek Coder",
+  "gemini-2.0-flash": "Gemini 2.0 Flash",
+  "gemini-1.5-pro": "Gemini 1.5 Pro",
+  "claude-sonnet-4-6": "Claude Sonnet 4.6",
+  "claude-haiku-4-5": "Claude Haiku 4.5",
+  "openai/gpt-4o": "OpenAI GPT-4o",
+  "anthropic/claude-sonnet-4-6": "Anthropic Claude 4.6",
+  "deepseek/deepseek-chat": "DeepSeek Chat",
+  "google/gemini-2.0-flash": "Google Gemini 2.0 Flash",
+  "mimo-v2-flash": "MiMo V2 Flash",
+  "mimo-v2-pro": "MiMo V2 Pro",
+};
 
 export const AI_ASSISTANTS = [
   {

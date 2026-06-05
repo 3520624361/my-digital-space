@@ -629,18 +629,9 @@ function toAbsoluteUrl(url) {
 
 function buildAudioProxyUrl(url) {
     if (!url || typeof url !== "string") return url;
-
     try {
         const parsedUrl = new URL(url, window.location.href);
-        if (parsedUrl.protocol === "https:") {
-            return parsedUrl.toString();
-        }
-
-        if (parsedUrl.protocol === "http:" && /(^|\.)kuwo\.cn$/i.test(parsedUrl.hostname)) {
-            return `${API.baseUrl}?target=${encodeURIComponent(parsedUrl.toString())}`;
-        }
-
-        return parsedUrl.toString();
+        return `${API.baseUrl}?target=${encodeURIComponent(parsedUrl.toString())}`;
     } catch (error) {
         console.warn("无法解析音频地址，跳过代理", error);
         return url;

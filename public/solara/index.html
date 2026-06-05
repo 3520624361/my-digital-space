@@ -293,10 +293,9 @@
     <div id="debugInfo" class="debug-info"></div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- API Shim: 将 /proxy 改为 /api/proxy -->
+    <!-- API Shim: 通过 Cloudflare Worker 代理 -->
     <script>
-        // 覆盖 Solara 的 API 基础路径
-        window.__SOLARA_API_BASE = '/api/proxy';
+        window.__SOLARA_API_BASE = '/api/solara/proxy';
         window.__SOLARA_PALETTE_BASE = '/api/palette';
         window.__SOLARA_STORAGE_BASE = '/api/storage';
     </script>

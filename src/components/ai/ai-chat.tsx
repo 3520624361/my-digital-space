@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Bot, User, Sparkles } from "lucide-react";
+import { Send, Bot, User, Sparkles, AlertCircle, StopCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Avatar } from "@/components/ui/avatar";
+import { AI_PROVIDER_LIST, MODEL_DISPLAY_NAMES } from "@/lib/ai";
 import type { AIMessage, AIType } from "@/types";
 
 interface AIChatProps {
@@ -38,11 +40,34 @@ export function AIChat({ type, systemPrompt }: AIChatProps) {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
+  // 提供者与模型选择
+  const [selectedProvider, setSelectedProvider] = useState<string>(AI_PROVIDER_LIST[0].value);
+  const currentProvider = AI_PROVIDER_LIST.find((p) => p.value === selectedProvider);
+  const [selectedModel, setSelectedModel] = useState<string>(currentProvider?.models[0] || "");
+
+  // 切换提供者时自动选择该提供者的第一个模型
+  const handleProviderChange = useCallback((value: string) => {
+    setSelectedProvider(value);
+    const provider = AI_PROVIDER_LIST.find((p) => p.value === value);
+    if (provider && provider.models.length > 0) {
+      setSelectedModel(provider.models[0]);
+    }
+  }, []);
+
+  // 滚动到底部
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // 停止生成
+  const handleStop = useCallback(() => {
+    abortRef.current?.abort();
+    setIsLoading(false);
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -57,18 +82,106 @@ export function AIChat({ type, systemPrompt }: AIChatProps) {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    setError(null);
 
-    // Simulate AI response - replace with actual API call
-    setTimeout(() => {
-      const aiMessage: AIMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: `这是对"${input.trim()}"的回复。在实际项目中，这里会调用AI API返回真实的回复内容。`,
-        createdAt: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
+    // 创建 AbortController 以便取消请求
+    const abortController = new AbortController();
+    abortRef.current = abortController;
+
+    try {
+      // 构建发送给 API 的消息列表（去掉欢迎消息）
+      const apiMessages = messages
+        .filter((m) => m.id !== "welcome")
+        .concat(userMessage)
+        .map((m) => ({ role: m.role, content: m.content }));
+
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: abortController.signal,
+        body: JSON.stringify({
+          provider: selectedProvider,
+          model: selectedModel,
+          messages: apiMessages,
+          systemPrompt,
+          stream: true,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || `请求失败 (${res.status})`);
+      }
+
+      const contentType = res.headers.get("Content-Type") || "";
+
+      // ===== 流式响应 =====
+      if (contentType.includes("text/event-stream")) {
+        const reader = res.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let fullContent = "";
+        const aiMessageId = (Date.now() + 1).toString();
+
+        // 先插入一条空白消息，后续逐步填充内容
+        setMessages((prev) => [
+          ...prev,
+          { id: aiMessageId, role: "assistant", content: "", createdAt: new Date().toISOString() },
+        ]);
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const data = line.slice(6).trim();
+              if (data === "[DONE]") continue;
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.error) {
+                  setError(parsed.error);
+                  // 移除空白占位消息
+                  setMessages((prev) => prev.filter((m) => m.id !== aiMessageId));
+                  break;
+                }
+                if (parsed.content) {
+                  fullContent += parsed.content;
+                  // 渐进更新消息内容（打字机效果）
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === aiMessageId ? { ...m, content: fullContent } : m
+                    ),
+                  );
+                }
+              } catch {
+                // JSON 解析失败，忽略该行
+              }
+            }
+          }
+        }
+      } else {
+        // ===== 非流式降级 =====
+        const data = await res.json();
+        const aiMessage: AIMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: data.content || "",
+          createdAt: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+      }
+    } catch (err: any) {
+      if (err.name === "AbortError") return; // 用户主动取消，不显示错误
+      setError(err.message || "请求失败，请稍后重试");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+      abortRef.current = null;
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -78,10 +191,60 @@ export function AIChat({ type, systemPrompt }: AIChatProps) {
     }
   };
 
+  const providerOptions = AI_PROVIDER_LIST.map((p) => ({
+    value: p.value,
+    label: p.label,
+  }));
+
+  const modelOptions = (currentProvider?.models || []).map((m) => ({
+    value: m,
+    label: MODEL_DISPLAY_NAMES[m] || m,
+  }));
+
   return (
     <div className="flex h-[calc(100vh-12rem)] flex-col rounded-xl border border-card-border bg-card-bg/50 backdrop-blur-sm">
+      {/* Provider & Model Selector Toolbar */}
+      <div className="flex items-center gap-3 border-b border-card-border px-4 py-3">
+        <div className="flex items-center gap-1.5">
+          <Sparkles className="h-4 w-4 text-accent" />
+          <span className="text-xs font-medium text-muted">AI 模型</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select
+            value={selectedProvider}
+            onChange={(e) => handleProviderChange(e.target.value)}
+            options={providerOptions}
+            className="h-8 w-[130px] text-xs"
+          />
+          <Select
+            value={selectedModel}
+            onChange={(e) => setSelectedModel(e.target.value)}
+            options={modelOptions}
+            className="h-8 w-[160px] text-xs"
+          />
+        </div>
+      </div>
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* 错误提示 */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-500"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="ml-auto text-xs hover:underline"
+            >
+              关闭
+            </button>
+          </motion.div>
+        )}
+
         <AnimatePresence>
           {messages.map((msg) => (
             <motion.div
@@ -121,7 +284,8 @@ export function AIChat({ type, systemPrompt }: AIChatProps) {
           ))}
         </AnimatePresence>
 
-        {isLoading && (
+        {/* 加载中提示（仅在没有流式消息时显示） */}
+        {isLoading && !messages.some((m) => m.content === "" && m.role === "assistant" && m.id !== "welcome") && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -143,7 +307,7 @@ export function AIChat({ type, systemPrompt }: AIChatProps) {
       </div>
 
       {/* Suggested prompts (shown when only welcome message) */}
-      {messages.length === 1 && (
+      {messages.length === 1 && !error && (
         <div className="px-4 pb-4">
           <div className="flex flex-wrap gap-2">
             {(suggestedPrompts[type] || []).slice(0, 3).map((prompt) => (
@@ -171,14 +335,20 @@ export function AIChat({ type, systemPrompt }: AIChatProps) {
             placeholder="输入你的问题..."
             className="flex-1"
           />
-          <Button
-            onClick={handleSend}
-            loading={isLoading}
-            disabled={!input.trim()}
-            size="icon"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+          {isLoading ? (
+            <Button onClick={handleStop} variant="destructive" size="icon">
+              <StopCircle className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSend}
+              loading={isLoading}
+              disabled={!input.trim()}
+              size="icon"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>
