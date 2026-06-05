@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
 // ========== 用户系统 ==========
@@ -116,7 +117,7 @@ model Comment {
   postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   parentId  String?
-  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   replies   Comment[] @relation("CommentReplies")
 
   @@index([postId])
@@ -369,7 +370,7 @@ model CommunityComment {
   postId    String
   post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   parentId  String?
-  parent    CommunityComment? @relation("CommunityCommentReplies", fields: [parentId], references: [id])
+  parent    CommunityComment? @relation("CommunityCommentReplies", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   replies   CommunityComment[] @relation("CommunityCommentReplies")
 }
 
