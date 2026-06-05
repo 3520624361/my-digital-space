@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type { ThemePreset } from "@/types";
 
 interface ThemeState {
@@ -9,12 +8,7 @@ interface ThemeState {
   setPreset: (preset: ThemePreset) => void;
 }
 
-export const useThemeStore = create<ThemeState>()(
-  persist(
-    (set) => ({
-      preset: "default",
-      setPreset: (preset) => set({ preset }),
-    }),
-    { name: "theme-preset" }
-  )
-);
+export const useThemeStore = create<ThemeState>()((set) => ({
+  preset: "default",
+  setPreset: (preset) => set({ preset }),
+}));

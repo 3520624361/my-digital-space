@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Music, Plus, Edit2, Trash2 } from "lucide-react";
+import { Music, Plus, Edit2, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,10 +27,41 @@ export default function AdminSongsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     title: "", artist: "", album: "", duration: 0,
     coverUrl: "", audioUrl: "", lyrics: "",
   });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("audio/")) {
+      toast.error("请选择音频文件");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.success) {
+        setForm({ ...form, audioUrl: data.data.url });
+        toast.success("上传成功！音频链接已自动填入");
+      } else {
+        toast.error(data.error || "上传失败");
+      }
+    } catch {
+      toast.error("上传失败");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const fetchSongs = async () => {
     try {
@@ -156,7 +187,26 @@ export default function AdminSongsPage() {
             <Input placeholder="专辑" value={form.album} onChange={(e) => setForm({ ...form, album: e.target.value })} />
             <Input placeholder="时长(秒)" type="number" value={form.duration} onChange={(e) => setForm({ ...form, duration: parseInt(e.target.value) || 0 })} />
             <Input placeholder="封面图片链接" value={form.coverUrl} onChange={(e) => setForm({ ...form, coverUrl: e.target.value })} />
-            <Input placeholder="音频链接 *" value={form.audioUrl} onChange={(e) => setForm({ ...form, audioUrl: e.target.value })} />
+            <div>
+              <Input placeholder="音频链接 *" value={form.audioUrl} onChange={(e) => setForm({ ...form, audioUrl: e.target.value })} />
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Button type="button" variant="outline" size="sm" className="gap-1"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  <Upload className="h-3 w-3" />
+                  {uploading ? "上传中..." : "上传 mp3 文件"}
+                </Button>
+                <span className="text-xs text-muted">或手动输入链接</span>
+              </div>
+            </div>
           </div>
           <Textarea placeholder="歌词（可选）" rows={4} value={form.lyrics} onChange={(e) => setForm({ ...form, lyrics: e.target.value })} />
           <div className="flex gap-3">

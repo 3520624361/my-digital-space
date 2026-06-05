@@ -8,23 +8,23 @@ import { MusicPlayer } from "@/components/music/music-player";
 
 export const metadata: Metadata = {
   title: {
-    default: "My Digital Space - 个人博客娱乐平台",
-    template: "%s | My Digital Space",
+    default: "筱青 - 个人空间",
+    template: "%s | 筱青",
   },
-  description: "一个集个人博客、AI助手、音乐娱乐、小游戏、知识库于一体的综合网站",
-  keywords: ["博客", "AI", "音乐", "游戏", "个人空间", "技术博客"],
-  authors: [{ name: "My Digital Space" }],
+  description: "一个集个人博客、AI助手、音乐娱乐、小游戏、知识库于一体的个人空间",
+  keywords: ["博客", "AI", "音乐", "游戏", "个人空间", "筱青"],
+  authors: [{ name: "筱青" }],
   openGraph: {
     type: "website",
     locale: "zh_CN",
-    siteName: "My Digital Space",
-    title: "My Digital Space - 个人博客娱乐平台",
-    description: "一个集个人博客、AI助手、音乐娱乐、小游戏、知识库于一体的综合网站",
+    siteName: "筱青",
+    title: "筱青 - 个人空间",
+    description: "一个集个人博客、AI助手、音乐娱乐、小游戏、知识库于一体的个人空间",
   },
   twitter: {
     card: "summary_large_image",
-    title: "My Digital Space",
-    description: "个人博客娱乐平台",
+    title: "筱青",
+    description: "个人空间",
   },
   robots: {
     index: true,

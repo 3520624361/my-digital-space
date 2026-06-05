@@ -50,7 +50,7 @@ export function Navbar() {
               <div className="absolute -inset-1 rounded-lg bg-accent/20 blur-sm group-hover:bg-accent/30 transition-all" />
             </div>
             <span className="text-lg font-bold gradient-text hidden sm:block">
-              My Digital Space
+              筱青
             </span>
           </Link>
 

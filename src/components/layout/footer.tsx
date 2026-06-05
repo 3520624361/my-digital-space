@@ -62,10 +62,10 @@ export function Footer() {
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-accent" />
             <span className="text-sm font-semibold gradient-text">
-              My Digital Space
+              筱青
             </span>
             <span className="text-sm text-muted">
-              &copy; {new Date().getFullYear()} All rights reserved.
+              &copy; {new Date().getFullYear()} 筱青的空间
             </span>
           </div>
 

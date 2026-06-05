@@ -32,7 +32,7 @@ export function Hero() {
             <div className="relative">
               <Avatar
                 size="xl"
-                fallback="探"
+                fallback="筱"
                 className="ring-4 ring-accent/20 ring-offset-4 ring-offset-background"
               />
               <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-white">
@@ -49,10 +49,10 @@ export function Hero() {
           >
             <h1 className="mb-2 text-4xl font-bold sm:text-5xl lg:text-6xl">
               你好，我是
-              <span className="gradient-text"> 探索者</span>
+              <span className="gradient-text"> 筱青</span>
             </h1>
             <p className="mb-2 text-lg text-muted sm:text-xl">
-              全栈开发者 / AI 爱好者
+              全栈开发者 / AI 爱好者 / 终身学习者
             </p>
           </motion.div>
 

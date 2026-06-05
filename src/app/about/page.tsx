@@ -29,7 +29,7 @@ export default function AboutPage() {
         </div>
         <h1 className="mb-3 text-4xl font-bold gradient-text">关于我</h1>
         <p className="mx-auto max-w-xl text-muted">
-          热爱技术，专注于构建优秀的Web应用和AI产品
+          热爱技术，探索未知，用代码创造美好
         </p>
       </motion.div>
 
@@ -41,7 +41,7 @@ export default function AboutPage() {
         className="glass-card mb-8 p-6"
       >
         <p className="leading-relaxed text-muted">
-          我是一名全栈开发者和AI爱好者，热衷于探索前沿技术，构建富有创意和实用价值的数字产品。
+          我是筱青，一名全栈开发者和AI爱好者，热衷于探索前沿技术，构建富有创意和实用价值的数字产品。
           这个个人空间是我的数字家园，记录了我的学习历程、技术思考和创意实践。
         </p>
       </motion.div>

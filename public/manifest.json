@@ -1,7 +1,7 @@
 {
-  "name": "My Digital Space",
-  "short_name": "MDSpace",
-  "description": "个人博客娱乐平台 - 集博客、AI、音乐、游戏于一体",
+  "name": "筱青的空间",
+  "short_name": "筱青",
+  "description": "筱青的个人空间 - 集博客、AI、音乐、游戏于一体",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0f",
