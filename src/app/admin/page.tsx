@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Settings, FileText, Users, MessageCircle, Eye, BarChart3, Edit, Plus } from "lucide-react";
+import { Settings, FileText, Users, MessageCircle, Eye, BarChart3, Edit, Plus, Music } from "lucide-react";
 import Link from "next/link";
 
 interface Stats {
@@ -36,6 +36,7 @@ export default function AdminPage() {
   const quickActions = [
     { href: "/admin/posts", label: "文章管理", icon: Edit, desc: "管理所有文章" },
     { href: "/admin/categories", label: "分类管理", icon: BarChart3, desc: "管理文章分类" },
+    { href: "/admin/songs", label: "音乐管理", icon: Music, desc: "管理歌曲和播放" },
     { href: "/admin/posts/new", label: "写文章", icon: Plus, desc: "创建新文章" },
   ];
 

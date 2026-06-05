@@ -1,25 +1,29 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Music, Disc3, Search } from "lucide-react";
-import { useState } from "react";
+import { Music, Disc3, Search, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { SongCard } from "@/components/music";
 import { Input } from "@/components/ui/input";
 import { MusicPlayer } from "@/components/music/music-player";
 import type { Song } from "@/types";
 
-const mockSongs: Song[] = [
-  { id: "1", title: "起风了", artist: "买辣椒也用券", album: "起风了", duration: 325, audioUrl: "#", playCount: 99999, coverUrl: null, lyrics: null },
-  { id: "2", title: "孤勇者", artist: "陈奕迅", album: "孤勇者", duration: 268, audioUrl: "#", playCount: 88888, coverUrl: null, lyrics: null },
-  { id: "3", title: "光年之外", artist: "邓紫棋", album: "光年之外", duration: 244, audioUrl: "#", playCount: 77777, coverUrl: null, lyrics: null },
-  { id: "4", title: "童话", artist: "光良", album: "童话", duration: 248, audioUrl: "#", playCount: 66666, coverUrl: null, lyrics: null },
-  { id: "5", title: "夜曲", artist: "周杰伦", album: "十一月的萧邦", duration: 226, audioUrl: "#", playCount: 55555, coverUrl: null, lyrics: null },
-];
-
 export default function MusicPage() {
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  const filteredSongs = mockSongs.filter(
+  useEffect(() => {
+    fetch("/api/music")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) setSongs(data.data);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filteredSongs = songs.filter(
     (s) => s.title.includes(search) || s.artist.includes(search)
   );
 
@@ -56,16 +60,21 @@ export default function MusicPage() {
           <h2 className="font-semibold">热门歌曲</h2>
         </div>
         <div className="divide-y divide-card-border">
-          {filteredSongs.map((song, index) => (
-            <SongCard key={song.id} song={song} index={index} />
-          ))}
+          {loading ? (
+            <div className="flex items-center justify-center py-10 text-muted">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : filteredSongs.length === 0 ? (
+            <div className="flex flex-col items-center py-10 text-muted">
+              <Music className="mb-2 h-8 w-8" />
+              <p>{search ? "暂无匹配的歌曲" : "暂无歌曲，去后台添加吧"}</p>
+            </div>
+          ) : (
+            filteredSongs.map((song, index) => (
+              <SongCard key={song.id} song={song} index={index} />
+            ))
+          )}
         </div>
-        {filteredSongs.length === 0 && (
-          <div className="flex flex-col items-center py-10 text-muted">
-            <Music className="mb-2 h-8 w-8" />
-            <p>暂无匹配的歌曲</p>
-          </div>
-        )}
       </motion.div>
 
       {/* Global Player */}
